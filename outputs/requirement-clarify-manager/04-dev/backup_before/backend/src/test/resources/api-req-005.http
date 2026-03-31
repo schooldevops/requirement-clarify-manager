@@ -1,8 +1,0 @@
-### TC-028, TC-030, TC-031: 이벤트스토밍 파이프라인 분석 실행 (정상)
-# 백그라운드 태스크 잡 ID를 반환하거나 202 Accepted 반환을 기대
-POST http://localhost:8080/api/v1/requirements/1/analyze
-Content-Type: application/json
-
-### TC-029: 미완료 용어가 있는 상태에서 분석 훅 실행 시도 (400 ERR-FLOW-001 예상)
-POST http://localhost:8080/api/v1/requirements/4/analyze
-Content-Type: application/json
