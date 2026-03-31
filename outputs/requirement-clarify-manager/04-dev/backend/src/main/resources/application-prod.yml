@@ -1,0 +1,12 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: jdbc:postgresql://db-prod:5432/clarify_manager
+    username: produser
+    password: prodpassword
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: validate

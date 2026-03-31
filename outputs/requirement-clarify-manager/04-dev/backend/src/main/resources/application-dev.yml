@@ -1,0 +1,12 @@
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: jdbc:postgresql://db-dev:5432/clarify_manager
+    username: devuser
+    password: devpassword
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: validate

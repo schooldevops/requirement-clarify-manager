@@ -1,0 +1,252 @@
+### Requirement Clarify Manager - REST Client
+### TC-001 ~ TC-012: POST /api/v1/requirements
+### 서버: http://localhost:8080 (local profile)
+
+@baseUrl = http://localhost:8080
+
+# ─────────────────────────────────────────────────────────────
+# TC-001 | 수기입력-정상 | 요구사항 직접 입력 정상 저장
+# 기대: 201 Created, status="Draft"
+# ─────────────────────────────────────────────────────────────
+### TC-001
+POST {{baseUrl}}/api/v1/requirements
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="data"
+
+{"projectName":"MyProject","requirementNo":"REQ-001","version":"1.0.0","title":"회원 가입 요구사항","description":"신규 사용자가 이메일로 회원 가입을 할 수 있어야 한다."}
+--boundary--
+
+###
+
+# ─────────────────────────────────────────────────────────────
+# TC-002 | 수기입력-예외 | 필수 필드 누락 (requirementNo 비워둠)
+# 기대: 400 Bad Request, ERR-VAL-001
+# ─────────────────────────────────────────────────────────────
+### TC-002
+POST {{baseUrl}}/api/v1/requirements
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="data"
+
+{"projectName":"MyProject","version":"1.0.0","title":"요구사항 번호 누락 테스트"}
+--boundary--
+
+###
+
+# ─────────────────────────────────────────────────────────────
+# TC-003 | 수기입력-예외 | 필수 필드 누락 (projectName 비워둠)
+# 기대: 400 Bad Request, ERR-VAL-001
+# ─────────────────────────────────────────────────────────────
+### TC-003
+POST {{baseUrl}}/api/v1/requirements
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="data"
+
+{"requirementNo":"REQ-003","version":"1.0.0","title":"프로젝트명 누락 테스트"}
+--boundary--
+
+###
+
+# ─────────────────────────────────────────────────────────────
+# TC-004 | 수기입력-예외 | 비정상 버전 포맷 (M.m.p 위반)
+# 기대: 400 Bad Request, ERR-VAL-007
+# ─────────────────────────────────────────────────────────────
+### TC-004 - 버전: "1.0" (패치 버전 없음)
+POST {{baseUrl}}/api/v1/requirements
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="data"
+
+{"projectName":"MyProject","requirementNo":"REQ-004a","version":"1.0","title":"잘못된 버전 포맷 테스트"}
+--boundary--
+
+###
+
+### TC-004b - 버전: "v1.final" (문자 혼합)
+POST {{baseUrl}}/api/v1/requirements
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="data"
+
+{"projectName":"MyProject","requirementNo":"REQ-004b","version":"v1.final","title":"잘못된 버전 포맷 테스트2"}
+--boundary--
+
+###
+
+# ─────────────────────────────────────────────────────────────
+# TC-005 | 수기입력-정상 | 정상 버전 포맷 (M.m.p)
+# 기대: 201 Created
+# ─────────────────────────────────────────────────────────────
+### TC-005a - 버전: "1.0.0"
+POST {{baseUrl}}/api/v1/requirements
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="data"
+
+{"projectName":"MyProject","requirementNo":"REQ-005a","version":"1.0.0","title":"정상 버전 테스트 1.0.0"}
+--boundary--
+
+###
+
+### TC-005b - 버전: "2.1.13"
+POST {{baseUrl}}/api/v1/requirements
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="data"
+
+{"projectName":"MyProject","requirementNo":"REQ-005b","version":"2.1.13","title":"정상 버전 테스트 2.1.13"}
+--boundary--
+
+###
+
+# ─────────────────────────────────────────────────────────────
+# TC-006 | 수기입력-경계 | 연관 요구사항 번호가 DB에 없는 경우
+# 기대: 201 Created (저장 가능, 경고만 반환)
+# ─────────────────────────────────────────────────────────────
+### TC-006
+POST {{baseUrl}}/api/v1/requirements
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="data"
+
+{"projectName":"MyProject","requirementNo":"REQ-006","version":"1.0.0","title":"연관 요구사항 미존재","relatedRequirementNo":"REQ-NONEXISTENT-999"}
+--boundary--
+
+###
+
+# ─────────────────────────────────────────────────────────────
+# TC-007 | 수기입력-예외 | JIRA ID(요구사항번호) 중복 등록
+# 전제: TC-001이 먼저 실행되어 REQ-001이 저장되어 있어야 함
+# 기대: 409 Conflict, ERR-DUP-001
+# ─────────────────────────────────────────────────────────────
+### TC-007
+POST {{baseUrl}}/api/v1/requirements
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="data"
+
+{"projectName":"MyProject","requirementNo":"REQ-001","version":"1.0.1","title":"중복 JIRA ID 테스트"}
+--boundary--
+
+###
+
+# ─────────────────────────────────────────────────────────────
+# TC-008 | 파일입력-정상 | .md 파일 업로드 (파일 첨부)
+# IntelliJ HTTP Client 사용 시: 파일 경로를 절대경로로 지정
+# 기대: 201 Created
+# ─────────────────────────────────────────────────────────────
+### TC-008
+POST {{baseUrl}}/api/v1/requirements
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="data"
+
+{"projectName":"FileTestProject","requirementNo":"REQ-008","version":"1.0.0","title":"MD 파일 업로드 테스트"}
+--boundary
+Content-Disposition: form-data; name="file"; filename="sample.md"
+Content-Type: text/markdown
+
+# 회원 가입 요구사항
+
+## 개요
+신규 사용자는 이메일 주소를 통해 회원 가입을 할 수 있어야 한다.
+
+## 상세 조건
+- 이메일 형식 검증 필수
+- 비밀번호는 8자 이상
+- 가입 완료 시 확인 이메일 발송
+
+--boundary--
+
+###
+
+# ─────────────────────────────────────────────────────────────
+# TC-009 | 파일입력-경계 | 10MB 초과 파일 업로드 시도
+# 기대: 413 Payload Too Large, ERR-FILE-001
+# 실제 테스트 시 spring.servlet.multipart.max-file-size 설정 확인
+# ─────────────────────────────────────────────────────────────
+### TC-009 (파일을 실제로 첨부해서 테스트 - 여기서는 size 시뮬레이션)
+# 실제 테스트: 12MB+ 파일을 file 파트에 첨부하여 실행
+POST {{baseUrl}}/api/v1/requirements
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="data"
+
+{"projectName":"FileTestProject","requirementNo":"REQ-009","version":"1.0.0","title":"파일 사이즈 초과 테스트"}
+--boundary
+Content-Disposition: form-data; name="file"; filename="large_file.md"
+Content-Type: text/markdown
+
+# 10MB를 초과하는 파일 업로드 시도 시뮬레이션
+# 실제 테스트는 12MB 이상의 .md 파일을 IntelliJ 파일 참조로 첨부할 것
+
+--boundary--
+
+###
+
+# ─────────────────────────────────────────────────────────────
+# TC-010 | 파일입력-경계 | 대용량 텍스트(4~5MB) 본문 직접 입력
+# 기대: 201 Created, 잘림 없이 전체 저장
+# ─────────────────────────────────────────────────────────────
+### TC-010
+POST {{baseUrl}}/api/v1/requirements
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="data"
+
+{"projectName":"FileTestProject","requirementNo":"REQ-010","version":"1.0.0","title":"대용량 텍스트 저장 테스트","description":"이 필드에 4~5MB의 텍스트를 실제 테스트 시 붙여넣어야 합니다. 현재는 플레이스홀더입니다."}
+--boundary--
+
+###
+
+# ─────────────────────────────────────────────────────────────
+# TC-011 | 파일입력-예외 | 미허용 파일 확장자 차단 (.pdf)
+# 기대: 400 Bad Request, ERR-FILE-002
+# ─────────────────────────────────────────────────────────────
+### TC-011
+POST {{baseUrl}}/api/v1/requirements
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="data"
+
+{"projectName":"FileTestProject","requirementNo":"REQ-011","version":"1.0.0","title":"잘못된 파일 확장자 테스트"}
+--boundary
+Content-Disposition: form-data; name="file"; filename="document.pdf"
+Content-Type: application/pdf
+
+%PDF-1.4 fake pdf content for test
+
+--boundary--
+
+###
+
+# ─────────────────────────────────────────────────────────────
+# TC-012 | 파일입력-보안 | XSS 방어 검증
+# 기대: 201 Created, <script> 태그가 Sanitize 처리되어 저장
+# ─────────────────────────────────────────────────────────────
+### TC-012
+POST {{baseUrl}}/api/v1/requirements
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="data"
+
+{"projectName":"SecurityTestProject","requirementNo":"REQ-012","version":"1.0.0","title":"XSS 방어 검증","description":"<script>alert('XSS 공격 테스트')</script><img src=x onerror=alert(1)>정상 텍스트 포함"}
+--boundary--
+
+###

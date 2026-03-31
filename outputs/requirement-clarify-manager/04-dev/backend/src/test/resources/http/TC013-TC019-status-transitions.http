@@ -1,0 +1,122 @@
+### Requirement Clarify Manager - REST Client
+### TC-013 ~ TC-019: PATCH /api/v1/requirements/{id}/status
+### 서버: http://localhost:8080 (local profile)
+
+@baseUrl = http://localhost:8080
+
+# ─────────────────────────────────────────────────────────────
+# 0. 준비: 요구사항 생성 (TC-001 기반)
+# ─────────────────────────────────────────────────────────────
+### Create Requirement for status test
+# @name createReq
+POST {{baseUrl}}/api/v1/requirements
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="data"
+
+{"projectName":"WorkflowTest","requirementNo":"REQ-STS-100","version":"1.0.0"}
+--boundary--
+
+### 추출된 ID 변수 설정 (IntelliJ HTTP Client 용)
+@reqId = {{createReq.response.body.id}}
+
+###
+
+# ─────────────────────────────────────────────────────────────
+# TC-013 | 상태전이-정상 | Draft -> Clarifying 전이
+# 기대: 200 OK, status="Clarifying"
+# ─────────────────────────────────────────────────────────────
+### TC-013
+PATCH {{baseUrl}}/api/v1/requirements/{{reqId}}/status
+Content-Type: application/json
+
+{
+    "status": "Clarifying"
+}
+
+###
+
+# ─────────────────────────────────────────────────────────────
+# TC-014 | 상태전이-정상 | Clarifying -> Clarified 전이
+# 기대: 200 OK, status="Clarified"
+# ─────────────────────────────────────────────────────────────
+### TC-014
+PATCH {{baseUrl}}/api/v1/requirements/{{reqId}}/status
+Content-Type: application/json
+
+{
+    "status": "Clarified"
+}
+
+###
+
+# ─────────────────────────────────────────────────────────────
+# TC-015 | 상태전이-정상 | Clarified -> In Progress 전이
+# 기대: 200 OK, status="In Progress"
+# ─────────────────────────────────────────────────────────────
+### TC-015
+PATCH {{baseUrl}}/api/v1/requirements/{{reqId}}/status
+Content-Type: application/json
+
+{
+    "status": "In Progress"
+}
+
+###
+
+# ─────────────────────────────────────────────────────────────
+# TC-016 | 상태전이-정상 | In Progress -> Done 전이
+# 기대: 200 OK, status="Done"
+# ─────────────────────────────────────────────────────────────
+### TC-016
+PATCH {{baseUrl}}/api/v1/requirements/{{reqId}}/status
+Content-Type: application/json
+
+{
+    "status": "Done"
+}
+
+###
+
+# ─────────────────────────────────────────────────────────────
+# TC-017 | 상태전이-예외 | 비정상 상태 건너뛰기 (Draft -> Done 직접 전이 시도)
+# 새 요구사항 생성 후 테스트
+# 기대: 400 Bad Request (또는 서버 설정에 따른 에러), ERR-STS-001
+# ─────────────────────────────────────────────────────────────
+### Create new req for TC-017
+# @name createReq2
+POST {{baseUrl}}/api/v1/requirements
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="data"
+
+{"projectName":"WorkflowTest","requirementNo":"REQ-STS-200","version":"1.0.0"}
+--boundary--
+
+###
+@reqId2 = {{createReq2.response.body.id}}
+
+### TC-017 (Skip transition)
+PATCH {{baseUrl}}/api/v1/requirements/{{reqId2}}/status
+Content-Type: application/json
+
+{
+    "status": "Done"
+}
+
+###
+
+# ─────────────────────────────────────────────────────────────
+# TC-019 | 상태전이-예외 | 완료건 수정 방어 (Done -> Draft 역전이 시도)
+# 전제: TC-016에서 생성된 {{reqId}} 가 Done 상태여야 함
+# 기대: 500 Internal Server Error (또는 403/400), ERR-STS-002
+# ─────────────────────────────────────────────────────────────
+### TC-019 (Modify Done requirement)
+PATCH {{baseUrl}}/api/v1/requirements/{{reqId}}/status
+Content-Type: application/json
+
+{
+    "status": "Draft"
+}

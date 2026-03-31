@@ -1,0 +1,15 @@
+### TC-020: 데이터 사전 생성 (정상 - 미정의 용어 추출)
+POST http://localhost:8080/api/v1/requirements/1/data-dictionary/extract
+Content-Type: application/json
+
+### TC-021: 데이터 사전 생성 (보안 - 타 프로젝트 연관 단어 처리 검증)
+POST http://localhost:8080/api/v1/requirements/2/data-dictionary/extract
+Content-Type: application/json
+
+### TC-022: 데이터 사전 생성 (정상 - 이음동의어 병합 제안 테스트)
+POST http://localhost:8080/api/v1/requirements/3/data-dictionary/extract
+Content-Type: application/json
+
+### TC-023: 데이터 사전 생성 (예외 - NLP 연동 에러 500 ERR-EXT-001 예상)
+POST http://localhost:8080/api/v1/requirements/999/data-dictionary/extract
+Content-Type: application/json

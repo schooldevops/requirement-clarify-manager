@@ -1,0 +1,25 @@
+### TC-028 ~ TC-036: Event Storming 파이프라인 및 시각화 뷰어 테스트
+@baseUrl = http://localhost:8080/api/v1
+@requirementId = 1
+
+### TC-029: 선행조건 불충족 파이프라인 차단 (Pending 용어 잔존 시)
+# ProjectA 에 아직 PENDING 상태인 용어가 남아있다면 실패 기대 (422)
+POST {{baseUrl}}/requirements/{{requirementId}}/analyze
+Content-Type: application/json
+
+{}
+
+### TC-028: 모든 용어가 정의된 상태에서 분석 Trigger (Accepted)
+# 모든 용어가 DEFINED 혹은 SKIP 된 후 호출 시 정상 (202)
+POST {{baseUrl}}/requirements/{{requirementId}}/analyze
+Content-Type: application/json
+
+{}
+
+### TC-031, TC-032: 시각화 보드 조회 (Success)
+# 분석이 완료된 후 (ThreadPool 작업 2초 대기 필요)
+GET {{baseUrl}}/requirements/{{requirementId}}/analysis-view
+
+### TC-033: 완료되지 않았거나 없는 요구사항의 뷰어 조회 시 에러 (404)
+# 존재하지 않는 ID (예: 999)
+GET {{baseUrl}}/requirements/999/analysis-view

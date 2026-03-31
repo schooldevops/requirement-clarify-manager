@@ -1,0 +1,7 @@
+### TC-032, TC-035: 분석 뷰어 종합 데이터 조회 (정상)
+GET http://localhost:8080/api/v1/requirements/1/analysis-view
+
+### TC-034: 무권한자의 타 프로젝트 뷰어 접근 (403 예상)
+GET http://localhost:8080/api/v1/requirements/999/analysis-view
+# 헤더에 권한 없는 토큰이나 인증 정보 세팅 가정
+Authorization: Bearer invalid-token

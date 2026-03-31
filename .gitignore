@@ -1,0 +1,43 @@
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# Kotlin
+.kotlin/
+
+# Generated Sources (OpenAPI, jOOQ, etc.)
+# If you want to keep generated sources in Git, comment these out.
+# However, usually better to generate them at build time.
+# outputs/requirement-clarify-manager/04-dev/backend/build/generated/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Sensitive Info (API Keys, local DB passwords)
+# application-local.yml
+# .env
+
+# H2 Database
+*.mv.db
+*.trace.db
+
+# Postgres Data (if using Docker)
+postgres_data/
+
+# Temporary files
+/tmp/
+.gemini/

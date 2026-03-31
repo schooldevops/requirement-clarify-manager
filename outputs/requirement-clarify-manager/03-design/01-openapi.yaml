@@ -1,0 +1,341 @@
+openapi: 3.0.0
+info:
+  title: Requirement Clarify Manager API
+  version: 1.0.0
+  description: |
+    요구사항 명세 관리 시스템 (Requirement Clarify Manager) MVP API 사양서.
+    기획자가 마크다운 파일이나 텍스트로 요구사항을 등록하면, 시스템이 데이터 사전을 추출 및 질의 과정을 거쳐 최종적으로 Event Storming 분석 결과를 시각화하여 제공합니다.
+servers:
+  - url: http://localhost:8080
+    description: Local Development Server
+
+paths:
+  /api/v1/requirements:
+    post:
+      summary: 요구사항 등록
+      description: 마크다운 파일(.md)을 업로드하거나 텍스트를 직접 입력하여 요구사항을 등록합니다.
+      tags:
+        - Requirements
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - data
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: 마크다운(.md) 파일 (최대 10MB)
+                data:
+                  type: string
+                  description: 요구사항 메타데이터 및 상세 텍스트 (JSON 문자열)
+            encoding:
+              data:
+                contentType: application/json
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequirementResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '413':
+          description: Payload Too Large (10MB 초과)
+
+  /api/v1/requirements/{id}/status:
+    patch:
+      summary: 요구사항 상태 변경
+      tags:
+        - Requirements
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RequirementId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum: [Draft, Clarifying, Clarified, In Progress, Done]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  status:
+                    type: string
+                  updatedAt:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/v1/requirements/{id}/data-dictionary/extract:
+    post:
+      summary: 데이터 사전 자동 추출 요청 (비동기)
+      tags:
+        - Data Dictionary
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RequirementId'
+      responses:
+        '202':
+          description: Accepted (Processing)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncJobResponse'
+
+  /api/v1/projects/{projectName}/data-dictionary/pending:
+    get:
+      summary: 미정의 용어 단건 조회
+      description: 프로젝트 내 미정의(Undefine) 상태인 데이터 사전 용어 중 다음 명확화 대상 1건을 조회합니다.
+      tags:
+        - Data Dictionary
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectName'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PendingTermResponse'
+
+  /api/v1/projects/{projectName}/data-dictionary/{termId}/clarify:
+    post:
+      summary: 단일 용어 명확화 제출 (인터랙션 피드백)
+      description: 기획자가 특정 용어에 대해 정의(DEFINE)를 수행하거나 건너뛰기(SKIP)를 선택합니다. 응답으로 즉시 다음 미정의 단어를 반환합니다.
+      tags:
+        - Data Dictionary
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectName'
+        - name: termId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClarifyRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  updated:
+                    type: boolean
+                  nextPendingTerm:
+                    $ref: '#/components/schemas/PendingTermResponse'
+        '404':
+          description: 존재하지 않는 용어 ID
+        '409':
+          description: 동시성 충돌 (Optimistic Lock 예외)
+
+  /api/v1/requirements/{id}/analyze:
+    post:
+      summary: 요구사항 상세 Event Storming 분석 요청 (비동기)
+      description: 완성된 데이터 사전을 바탕으로 Event Storming 요소들을 추출합니다.
+      tags:
+        - Analysis
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RequirementId'
+      responses:
+        '202':
+          description: Accepted (Processing)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncJobResponse'
+        '422':
+          description: Unprocessable Entity (데이터 사전 미완료)
+
+  /api/v1/requirements/{id}/analysis-view:
+    get:
+      summary: 통합 분석 결과 뷰어 조회
+      tags:
+        - Analysis
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RequirementId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisViewResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    RequirementId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    ProjectName:
+      name: projectName
+      in: path
+      required: true
+      schema:
+        type: string
+
+  responses:
+    BadRequest:
+      description: Bad Request (유효성 검증 실패 등)
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errorCode:
+                type: string
+              message:
+                type: string
+
+  schemas:
+    RequirementResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        requirementNo:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    AsyncJobResponse:
+      type: object
+      properties:
+        jobId:
+          type: string
+        status:
+          type: string
+        message:
+          type: string
+
+    PendingTermResponse:
+      type: object
+      properties:
+        termId:
+          type: integer
+        koreanName:
+          type: string
+        isComplete:
+          type: boolean
+        remainingCount:
+          type: integer
+
+    ClarifyRequest:
+      type: object
+      required:
+        - action
+        - version
+      properties:
+        action:
+          type: string
+          enum: [DEFINE, SKIP]
+        version:
+          type: integer
+          description: Optimistic Lock version
+        englishName:
+          type: string
+        dataType:
+          type: string
+        dataLength:
+          type: integer
+        description:
+          type: string
+
+    AnalysisViewResponse:
+      type: object
+      properties:
+        requirement:
+          type: object
+          properties:
+            requirementNo:
+              type: string
+            originalFileUrl:
+              type: string
+        dataDictionary:
+          type: array
+          items:
+            type: object
+        eventStorming:
+          type: object
+          properties:
+            actors:
+              type: array
+              items:
+                type: string
+            domainEvents:
+              type: array
+              items:
+                type: string
+            commands:
+              type: array
+              items:
+                type: string
+            domainObjects:
+              type: array
+              items:
+                type: string
+            aggregates:
+              type: array
+              items:
+                type: string
+            externalSystems:
+              type: array
+              items:
+                type: string
+        diagrams:
+          type: object
+          properties:
+            businessProcess:
+              type: string
+            sequenceDiagram:
+              type: string
+            usecaseDiagram:
+              type: string

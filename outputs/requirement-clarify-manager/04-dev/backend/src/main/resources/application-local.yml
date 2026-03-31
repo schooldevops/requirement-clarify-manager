@@ -1,0 +1,26 @@
+spring:
+  config:
+    activate:
+      on-profile: local
+
+  # ── PostgreSQL 로컬 DB 설정 ──────────────────
+  datasource:
+    url: jdbc:postgresql://localhost:5432/clarify_manager_local
+    driver-class-name: org.postgresql.Driver
+    username: postgres
+    password: postgres
+    hikari:
+      maximum-pool-size: 5
+
+  sql:
+    init:
+      mode: always        # schema.sql 을 항상 실행하여 테이블 생성
+      platform: postgres
+
+  jooq:
+    sql-dialect: postgres
+
+logging:
+  level:
+    org:
+      jooq: DEBUG         # jOOQ SQL 로그 출력

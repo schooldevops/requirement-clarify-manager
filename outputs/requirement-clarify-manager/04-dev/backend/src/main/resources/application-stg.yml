@@ -1,0 +1,12 @@
+spring:
+  config:
+    activate:
+      on-profile: stg
+  datasource:
+    url: jdbc:postgresql://db-stg:5432/clarify_manager
+    username: stguser
+    password: stgpassword
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: validate

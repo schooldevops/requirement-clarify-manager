@@ -1,0 +1,50 @@
+### TC-020 ~ TC-027: 데이터 사전 추출 및 명확화 테스트
+@baseUrl = http://localhost:8080/api/v1
+@projectName = ProjectA
+@requirementId = 1
+
+### TC-020: 명사/동사 기반 자동 추출 (Trigger)
+POST {{baseUrl}}/requirements/{{requirementId}}/data-dictionary/extract
+Content-Type: application/json
+
+{}
+
+### TC-021: 대기 중인 용어 조회 (PENDING 상태)
+GET {{baseUrl}}/projects/{{projectName}}/data-dictionary/pending
+
+### TC-024, TC-027: 용어 명확화 (정의 입력)
+# termId 가 1이라고 가정 (TC-021 결과에서 확인 가능)
+POST {{baseUrl}}/projects/{{projectName}}/data-dictionary/1/clarify
+Content-Type: application/json
+
+{
+  "englishName": "UserAccount",
+  "dataType": "Actor",
+  "dataLength": 0,
+  "description": "시스템을 사용하는 사용자 계정 정보 🚀",
+  "status": "DEFINED",
+  "version": 0
+}
+
+### TC-025: 용어 명확화 (Skip 플로우)
+# termId 가 2라고 가정
+POST {{baseUrl}}/projects/{{projectName}}/data-dictionary/2/clarify
+Content-Type: application/json
+
+{
+  "status": "SKIP",
+  "version": 0
+}
+
+### TC-026: 동시 수정 낙관적 락 검증 (Conflict 유도)
+# 같은 termId(1)에 대해 version 0으로 다시 보내면 409 혹은 OptimisticLockingFailureException 발생 예상
+POST {{baseUrl}}/projects/{{projectName}}/data-dictionary/1/clarify
+Content-Type: application/json
+
+{
+  "englishName": "ConflictingName",
+  "dataType": "Actor",
+  "description": "Conflict Test",
+  "status": "DEFINED",
+  "version": 0
+}

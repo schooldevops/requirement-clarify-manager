@@ -1,0 +1,55 @@
+### TC-013: 상태전이-정상 (Draft -> Clarifying)
+PATCH http://localhost:8080/api/v1/requirements/1/status
+Content-Type: application/json
+
+{
+  "status": "Clarifying"
+}
+
+### TC-014: 상태전이-정상 (Clarifying -> Clarified)
+PATCH http://localhost:8080/api/v1/requirements/1/status
+Content-Type: application/json
+
+{
+  "status": "Clarified"
+}
+
+### TC-015: 상태전이-정상 (Clarified -> In Progress)
+PATCH http://localhost:8080/api/v1/requirements/1/status
+Content-Type: application/json
+
+{
+  "status": "In Progress"
+}
+
+### TC-016: 상태전이-정상 (In Progress -> Done)
+PATCH http://localhost:8080/api/v1/requirements/1/status
+Content-Type: application/json
+
+{
+  "status": "Done"
+}
+
+### TC-017: 상태전이-예외 (Draft -> Done 바로 변경 시도 - 400 ERR-STS-001 예상)
+PATCH http://localhost:8080/api/v1/requirements/1/status
+Content-Type: application/json
+
+{
+  "status": "Done"
+}
+
+### TC-018: 상태전이-예외 (Clarifying -> In Progress 바로 변경 시도 - 400 ERR-STS-001 예상)
+PATCH http://localhost:8080/api/v1/requirements/1/status
+Content-Type: application/json
+
+{
+  "status": "In Progress"
+}
+
+### TC-019: 상태전이-예외 (Done 상태 문서 수정 시도 - 403 예상)
+PATCH http://localhost:8080/api/v1/requirements/1/status
+Content-Type: application/json
+
+{
+  "status": "Draft"
+}

@@ -11,7 +11,7 @@
 | 연관 요구사항 번호 | Related Req ID | relatedReqId | 참조 요구사항 | - | 이전 또는 관련 요구사항과의 연결 고리 | Defined | - |
 | 신규 구분 | Requirement Type | reqType | 신규여부, 수정구분 | `신규`, `수정` | 요구사항이 완전 신규인지 기존 기능의 수정인지 구분 | Defined | - |
 | 프로젝트 명 | Project Name | projName | 서비스 명, 시스템 명 | - | 요구사항 및 데이터 사전 격리의 기준 단위 | Defined | - |
-| 카테고리명 | Task Category | taskCategory | 업무 카테고리 | 등록된 카테고리 풀 | 프로젝트 내의 업무 범주 분류 | Needs Clarification | 사전에 등록해야 하는 업무 카테고리 풀(예: 결제, 정산, 회원 등)의 정확한 초기 데이터 목록이 어떻게 되나요? |
+| 카테고리명 | Task Category | taskCategory | 업무 카테고리 | `회원`,`결제`,`정산`,`배송`,`할인`,`상품`,`기타` | 프로젝트 내의 업무 범주 분류 | Defined | - |
 | 요구사항 이름 | Requirement Name | reqName | 요구사항 제목 | Not Null | 요구사항에 대한 핵심 개요 문장/제목 | Defined | - |
 | 작성자 | Author | author | 작성자명, 작성자 사번 | Not Null | 요구사항 작성자의 식별 정보 | Defined | - |
 | 작성일 | Created At | createdAt | 등록일, 생성일 | `YYYY-MM-DD HH:mm:ss` | 요구사항이 처음 등록된 일시 | Defined | - |
@@ -19,7 +19,7 @@
 | 버전 | Version | version | 리비전 | `Major-Minor-Patch` | 요구사항 문서의 리비전 상태 | Defined | - |
 | 요구사항 개요 | Req Overview | reqOverview | 요약 | Max 4000자 | 요구사항 전반의 간략한 설명 | Defined | - |
 | 요구사항 상세 | Req Detail | reqDetail | 본문 | 최대 수 MB 텍스트 | 대량의 텍스트로 구성된 요구사항의 본문 내용 | Defined | - |
-| 요구사항 상태 | Req Status | reqStatus | 진행 상태 | `Draft`, `Clarify...` | 요구사항의 워크플로우 진행 단계 표시 | Needs Clarification | `Clarifying` 상태에서 검토를 반려(Reject)하는 흐름도 추가해야 하나요? |
+| 요구사항 상태 | Req Status | reqStatus | 진행 상태 | `Draft`, `Clarifying`, `Clarified`, `In Progress`, `Done` | 요구사항의 워크플로우 진행 단계 표시 | Defined | - |
 
 ## 2. 데이터 사전 및 명확화 모듈 (Data Dictionary & Clarification)
 
@@ -27,7 +27,7 @@
 |---|---|---|---|---|---|---|---|
 | 데이터 사전 | Data Dictionary | dataDict | 용어 집합, 단어장 | - | 명사/동사로 자동 추출된 프로젝트 기반 용어 모음 | Defined | - |
 | 추출 용어 | Extracted Term | extTerm | 어휘, 추출 단어 | - | 요구사항 상세 텍스트에서 추출된 명사/동사 | Defined | - |
-| 피드백 질의 | Feedback Query | feedbackQuery | 명확화 요청 | Max 1000자 | 미정의된 용어에 대해 기획자에게 정의를 요구하는 텍스트 | Needs Clarification | 피드백 질의 시 UI에 주관식 외에 객관식(다중 선택형) 질문 리스트를 제공해야 할까요? |
+| 피드백 질의 | Feedback Query | feedbackQuery | 명확화 요청 | Max 1000자 | 미정의된 용어에 대해 기획자에게 정의를 요구하는 텍스트 | Defined | - |
 | 용어 정의 상태 | Term Status | termStatus | - | `Defined`, `Undefined`, `Skipped` | 개별 추출 용어의 사전 정의 완료 여부 | Defined | - |
 | 동시성 제어 키 | Optimistic Lock | optLock | - | 순차 증가 Integer | 다수 기획자가 동시에 동일 용어 정의 시도 시 충돌 제어 | Defined | - |
 
@@ -37,7 +37,7 @@
 |---|---|---|---|---|---|---|---|
 | 이벤트 스토밍 | Event Storming | evtStorming | - | 분석 파이프라인 | 액터, 이벤트 등을 추출해 내는 분석 이벤트 | Defined | - |
 | 액터 | Actor | actor | 사용자, 행위자 | - | 시스템을 사용하거나 이벤트를 촉발하는 주체 | Defined | - |
-| 커맨드 | Command | command | 명령 | 동사형 텍스트 | 액터가 시스템에 지시하는 의도된 동작 | Skipped | (추후 정립 필요) 사용자 액션 외에 '크론 스케줄러'도 액터/커맨드로 추출하는 로직을 포함할까요? |
+| 커맨드 | Command | command | 명령 | 동사형 텍스트 | 사용자 및 내부 스케줄러가 시스템에 지시하는 의도된 동작 | Defined | - |
 | 도메인 이벤트 | Domain Event | domainEvent | 상태 변경 이벤트 | 과거형 텍스트 | 커맨드의 결과로 도메인 객체에 반영된 상태 및 사실 | Defined | - |
 | 도메인 객체 | Domain Object | domainObj | 엔티티, 모델 | 명사형 텍스트 | 이벤트가 발생하고 상태를 관리하는 핵심 도메인 정보 | Defined | - |
 | 애그리거트 | Aggregate | aggregate | 트랜잭션 경계 | - | 관련된 도메인 객체들을 하나의 트랜잭션 단위로 묶은 군집 | Defined | - |

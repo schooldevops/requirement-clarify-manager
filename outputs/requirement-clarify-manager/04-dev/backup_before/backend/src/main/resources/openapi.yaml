@@ -1,0 +1,484 @@
+openapi: 3.0.0
+info:
+  description: |
+    요구사항 명세 관리 시스템 (Requirement Clarify Manager) MVP API 사양서.
+    기획자가 마크다운 파일이나 텍스트로 요구사항을 등록하면, 시스템이 데이터 사전을 추출 및 질의 과정을 거쳐 최종적으로 Event Storming 분석 결과를 시각화하여 제공합니다.
+  title: Requirement Clarify Manager API
+  version: 1.0.0
+servers:
+- description: Local Development Server
+  url: http://localhost:8080
+paths:
+  /api/v1/requirements:
+    post:
+      description: 마크다운 파일(.md)을 업로드하거나 텍스트를 직접 입력하여 요구사항을 등록합니다.
+      requestBody:
+        content:
+          multipart/form-data:
+            encoding:
+              data:
+                contentType: application/json
+                style: form
+            schema:
+              $ref: "#/components/schemas/_api_v1_requirements_post_request"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RequirementResponse"
+          description: Created
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "413":
+          description: Payload Too Large (10MB 초과)
+      security:
+      - BearerAuth: []
+      summary: 요구사항 등록
+      tags:
+      - Requirements
+  /api/v1/requirements/{id}/status:
+    patch:
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/_api_v1_requirements__id__status_patch_request"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_api_v1_requirements__id__status_patch_200_response"
+          description: OK
+        "400":
+          $ref: "#/components/responses/BadRequest"
+      security:
+      - BearerAuth: []
+      summary: 요구사항 상태 변경
+      tags:
+      - Requirements
+  /api/v1/requirements/{id}/data-dictionary/extract:
+    post:
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AsyncJobResponse"
+          description: Accepted (Processing)
+      security:
+      - BearerAuth: []
+      summary: 데이터 사전 자동 추출 요청 (비동기)
+      tags:
+      - Data Dictionary
+  /api/v1/projects/{projectName}/data-dictionary/pending:
+    get:
+      description: 프로젝트 내 미정의(Undefine) 상태인 데이터 사전 용어 중 다음 명확화 대상 1건을 조회합니다.
+      parameters:
+      - explode: false
+        in: path
+        name: projectName
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PendingTermResponse"
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: 미정의 용어 단건 조회
+      tags:
+      - Data Dictionary
+  /api/v1/projects/{projectName}/data-dictionary/{termId}/clarify:
+    post:
+      description: 기획자가 특정 용어에 대해 정의(DEFINE)를 수행하거나 건너뛰기(SKIP)를 선택합니다. 응답으로 즉시 다음
+        미정의 단어를 반환합니다.
+      parameters:
+      - explode: false
+        in: path
+        name: projectName
+        required: true
+        schema:
+          type: string
+        style: simple
+      - explode: false
+        in: path
+        name: termId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClarifyRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_api_v1_projects__projectName__data_dictionary__termId__clarify_post_200_response"
+          description: OK
+        "404":
+          description: 존재하지 않는 용어 ID
+        "409":
+          description: 동시성 충돌 (Optimistic Lock 예외)
+      security:
+      - BearerAuth: []
+      summary: 단일 용어 명확화 제출 (인터랙션 피드백)
+      tags:
+      - Data Dictionary
+  /api/v1/requirements/{id}/analyze:
+    post:
+      description: 완성된 데이터 사전을 바탕으로 Event Storming 요소들을 추출합니다.
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AsyncJobResponse"
+          description: Accepted (Processing)
+        "422":
+          description: Unprocessable Entity (데이터 사전 미완료)
+      security:
+      - BearerAuth: []
+      summary: 요구사항 상세 Event Storming 분석 요청 (비동기)
+      tags:
+      - Analysis
+  /api/v1/requirements/{id}/analysis-view:
+    get:
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalysisViewResponse"
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: 통합 분석 결과 뷰어 조회
+      tags:
+      - Analysis
+components:
+  parameters:
+    RequirementId:
+      explode: false
+      in: path
+      name: id
+      required: true
+      schema:
+        type: integer
+      style: simple
+    ProjectName:
+      explode: false
+      in: path
+      name: projectName
+      required: true
+      schema:
+        type: string
+      style: simple
+  responses:
+    BadRequest:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/inline_object"
+      description: Bad Request (유효성 검증 실패 등)
+  schemas:
+    RequirementResponse:
+      example:
+        createdAt: 2000-01-23T04:56:07.000+00:00
+        requirementNo: requirementNo
+        id: 0
+        status: status
+      properties:
+        id:
+          type: integer
+        requirementNo:
+          type: string
+        status:
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+      type: object
+    AsyncJobResponse:
+      example:
+        jobId: jobId
+        message: message
+        status: status
+      properties:
+        jobId:
+          type: string
+        status:
+          type: string
+        message:
+          type: string
+      type: object
+    PendingTermResponse:
+      example:
+        termId: 0
+        koreanName: koreanName
+        remainingCount: 6
+        isComplete: true
+      properties:
+        termId:
+          type: integer
+        koreanName:
+          type: string
+        isComplete:
+          type: boolean
+        remainingCount:
+          type: integer
+      type: object
+    ClarifyRequest:
+      example:
+        englishName: englishName
+        dataLength: 6
+        dataType: dataType
+        action: DEFINE
+        description: description
+        version: 0
+      properties:
+        action:
+          enum:
+          - DEFINE
+          - SKIP
+          type: string
+        version:
+          description: Optimistic Lock version
+          type: integer
+        englishName:
+          type: string
+        dataType:
+          type: string
+        dataLength:
+          type: integer
+        description:
+          type: string
+      required:
+      - action
+      - version
+      type: object
+    AnalysisViewResponse:
+      example:
+        eventStorming:
+          actors:
+          - actors
+          - actors
+          externalSystems:
+          - externalSystems
+          - externalSystems
+          domainObjects:
+          - domainObjects
+          - domainObjects
+          aggregates:
+          - aggregates
+          - aggregates
+          domainEvents:
+          - domainEvents
+          - domainEvents
+          commands:
+          - commands
+          - commands
+        dataDictionary:
+        - "{}"
+        - "{}"
+        diagrams:
+          businessProcess: businessProcess
+          sequenceDiagram: sequenceDiagram
+          usecaseDiagram: usecaseDiagram
+        requirement:
+          requirementNo: requirementNo
+          originalFileUrl: originalFileUrl
+      properties:
+        requirement:
+          $ref: "#/components/schemas/AnalysisViewResponse_requirement"
+        dataDictionary:
+          items:
+            type: object
+          type: array
+        eventStorming:
+          $ref: "#/components/schemas/AnalysisViewResponse_eventStorming"
+        diagrams:
+          $ref: "#/components/schemas/AnalysisViewResponse_diagrams"
+      type: object
+    _api_v1_requirements_post_request:
+      properties:
+        file:
+          description: 마크다운(.md) 파일 (최대 10MB)
+          format: binary
+          type: string
+        data:
+          description: 요구사항 메타데이터 및 상세 텍스트 (JSON 문자열)
+          type: string
+      required:
+      - data
+      type: object
+    _api_v1_requirements__id__status_patch_request:
+      properties:
+        status:
+          enum:
+          - Draft
+          - Clarifying
+          - Clarified
+          - In Progress
+          - Done
+          type: string
+      required:
+      - status
+      type: object
+    _api_v1_requirements__id__status_patch_200_response:
+      example:
+        id: 0
+        status: status
+        updatedAt: 2000-01-23T04:56:07.000+00:00
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+        updatedAt:
+          format: date-time
+          type: string
+      type: object
+    _api_v1_projects__projectName__data_dictionary__termId__clarify_post_200_response:
+      example:
+        nextPendingTerm:
+          termId: 0
+          koreanName: koreanName
+          remainingCount: 6
+          isComplete: true
+        updated: true
+      properties:
+        updated:
+          type: boolean
+        nextPendingTerm:
+          $ref: "#/components/schemas/PendingTermResponse"
+      type: object
+    AnalysisViewResponse_requirement:
+      example:
+        requirementNo: requirementNo
+        originalFileUrl: originalFileUrl
+      properties:
+        requirementNo:
+          type: string
+        originalFileUrl:
+          type: string
+      type: object
+    AnalysisViewResponse_eventStorming:
+      example:
+        actors:
+        - actors
+        - actors
+        externalSystems:
+        - externalSystems
+        - externalSystems
+        domainObjects:
+        - domainObjects
+        - domainObjects
+        aggregates:
+        - aggregates
+        - aggregates
+        domainEvents:
+        - domainEvents
+        - domainEvents
+        commands:
+        - commands
+        - commands
+      properties:
+        actors:
+          items:
+            type: string
+          type: array
+        domainEvents:
+          items:
+            type: string
+          type: array
+        commands:
+          items:
+            type: string
+          type: array
+        domainObjects:
+          items:
+            type: string
+          type: array
+        aggregates:
+          items:
+            type: string
+          type: array
+        externalSystems:
+          items:
+            type: string
+          type: array
+      type: object
+    AnalysisViewResponse_diagrams:
+      example:
+        businessProcess: businessProcess
+        sequenceDiagram: sequenceDiagram
+        usecaseDiagram: usecaseDiagram
+      properties:
+        businessProcess:
+          type: string
+        sequenceDiagram:
+          type: string
+        usecaseDiagram:
+          type: string
+      type: object
+    inline_object:
+      example:
+        errorCode: errorCode
+        message: message
+      properties:
+        errorCode:
+          type: string
+        message:
+          type: string
+      type: object
+  securitySchemes:
+    BearerAuth:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http
